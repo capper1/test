@@ -1,0 +1,27 @@
+CREATE USER test WITH
+	LOGIN
+	SUPERUSER
+	CREATEDB
+	CREATEROLE
+	INHERIT
+	NOREPLICATION
+	CONNECTION LIMIT -1
+	PASSWORD 'test';
+
+CREATE DATABASE testdb
+    WITH
+    OWNER = test
+    ENCODING = 'UTF8'
+    CONNECTION LIMIT = -1;
+
+CREATE TABLE public.user_connect
+(
+    user_id integer NOT NULL
+)
+WITH (
+    OIDS = FALSE
+);
+
+ALTER TABLE public.user_connect
+    OWNER to test;
+
