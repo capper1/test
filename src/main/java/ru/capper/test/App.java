@@ -10,6 +10,7 @@ public class App {
     private static final String JDBC_DRIVER = "org.postgresql.Driver";
     private static final String SQL_SELECT = "SELECT COUNT(*) FROM user_connect WHERE user_id = ?";
     private static final String SQL_INSERT = "INSERT INTO user_connect(user_id) VALUES (?)";
+    private static final String SQL_SELECT_ALL = "SELECT * FROM (SELECT user_id, COUNT(*) FROM user_connect GROUP BY user_id) AS temp";
 
     public static void main(String[] args) throws Exception {
         Options options = new Options();
@@ -18,8 +19,7 @@ public class App {
             cmd = parseCmd(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("utility-name", options);
+            new HelpFormatter().printHelp("utility-name", options);
             System.exit(1);
             return;
         }
@@ -73,7 +73,31 @@ public class App {
                     })
 
                     .get("/STAT", (request, response) -> {
-                        return "What is this? " + request.body();
+                        assert connection != null;
+
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("[");
+                        try (Statement statement = connection.createStatement()) {
+                            try (ResultSet resultSet = statement.executeQuery(SQL_SELECT_ALL)) {
+                                if (null != resultSet) {
+                                    while (resultSet.next()) {
+                                        int userId = resultSet.getInt(1);
+                                        long countConnect = resultSet.getLong(2);
+                                        sb
+                                                .append("{\"userId\":\"")
+                                                .append(userId)
+                                                .append("\",\"times\":")
+                                                .append(countConnect)
+                                                .append("},");
+                                    }
+                                    sb.deleteCharAt(sb.length() - 1);
+                                }
+                            }
+                        }
+
+                        sb.append("]");
+
+                        return sb.toString();
                     })
 
                     .start();
