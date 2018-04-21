@@ -4,21 +4,25 @@ import org.apache.commons.cli.*;
 import ru.capper.test.server.WebServer;
 
 import java.sql.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class App {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
     private static final String JDBC_DRIVER = "org.postgresql.Driver";
     private static final String SQL_SELECT = "SELECT COUNT(*) FROM user_connect WHERE user_id = ?";
     private static final String SQL_INSERT = "INSERT INTO user_connect(user_id) VALUES (?)";
     private static final String SQL_SELECT_ALL = "SELECT * FROM (SELECT user_id, COUNT(*) FROM user_connect GROUP BY user_id) AS temp";
 
     public static void main(String[] args) throws Exception {
+
         Options options = new Options();
         CommandLine cmd;
         try {
             cmd = parseCmd(options, args);
         } catch (ParseException e) {
-            System.out.println(e.getMessage());
+            LOGGER.error(e.getMessage());
             new HelpFormatter().printHelp("utility-name", options);
             System.exit(1);
             return;
@@ -32,7 +36,7 @@ public class App {
                 cmd.getOptionValue("password")
         )) {
             if (null != connection) {
-                System.out.println("Connected to database");
+                LOGGER.info("Connected to database");
             }
 
             new WebServer()
@@ -103,7 +107,7 @@ public class App {
                     .start();
 
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            LOGGER.error(ex.toString(), ex);
         }
     }
 
