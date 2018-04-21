@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 public class App {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
-    private static final String JDBC_DRIVER = "org.postgresql.Driver";
     private static final String SQL_SELECT = "SELECT COUNT(*) FROM user_connect WHERE user_id = ?";
     private static final String SQL_INSERT = "INSERT INTO user_connect(user_id) VALUES (?)";
     private static final String SQL_SELECT_ALL = "SELECT * FROM (SELECT user_id, COUNT(*) FROM user_connect GROUP BY user_id) AS temp";
@@ -27,8 +26,6 @@ public class App {
             System.exit(1);
             return;
         }
-
-        Class.forName(JDBC_DRIVER);
 
         try (Connection connection = DriverManager.getConnection(
                 cmd.getOptionValue("db_url"),
