@@ -10,9 +10,11 @@ import org.slf4j.LoggerFactory;
 public class App {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
+
     private static final String SQL_SELECT = "SELECT COUNT(*) FROM user_connect WHERE user_id = ?";
     private static final String SQL_INSERT = "INSERT INTO user_connect(user_id) VALUES (?)";
     private static final String SQL_SELECT_ALL = "SELECT * FROM (SELECT user_id, COUNT(*) FROM user_connect GROUP BY user_id) AS temp";
+    private static final String ERROR_MESSAGE = "useiId должен быть целым числом в диапазоне от -2147483648 до 2147483647";
 
     public static void main(String[] args) throws Exception {
 
@@ -42,15 +44,12 @@ public class App {
 
                         assert connection != null;
 
-                        int userId = -1;
+                        int userId;
                         try {
                             userId = Integer.valueOf(request.body());
                         } catch (NumberFormatException nfe) {
-                            StringBuilder sb = new StringBuilder();
-                            for (StackTraceElement stackTraceElement : nfe.getStackTrace()) {
-                                sb.append(stackTraceElement.toString()).append("\n");
-                            }
-                            return sb.toString();
+                            LOGGER.warn(ERROR_MESSAGE);
+                            return ERROR_MESSAGE;
                         }
 
                         try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT)) {
