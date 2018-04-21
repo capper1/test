@@ -43,11 +43,20 @@
             <artifactId>commons-cli</artifactId>
             <version>${commons-cli.version}</version>
         </dependency>
+
+        <!-- log -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
+            <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>com.mchange</groupId>
+            <artifactId>c3p0</artifactId>
+            <version>0.9.5.2</version>
+        </dependency>
+
 
         <!-- log -->
         <dependency>
@@ -78,6 +87,7 @@
                 <configuration>
                     <excludes>
                         <exclude>**/logback.xml</exclude>
+                        <exclude>**/db.properties</exclude>
                     </excludes>
                 </configuration>
             </plugin>

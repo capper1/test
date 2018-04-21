@@ -2,9 +2,13 @@
 
 `mvn clean package`
 
-`java -jar target/test-jar-with-dependencies.jar -db jdbc:postgresql://db_host:db_port/db_name -p db_password -u db_user`
+`-XX:+UseG1GC -XX:G1HeapRegionSize=1024 -cp "path/to/postgresql-42.2.2.jar;."`
 
 Дополнительно:
  * настройка логгирования
  
- `-Dlogback.configurationFile=/path/to/logback.xml`
+ `-Dlogback.configurationFile="path/to/project/src/main/resources/logback.xml"`
+ 
+ * настройка базы данных
+ 
+ `-Ddatabase.properties="path/to/project/src/main/resources/database.properties"`
