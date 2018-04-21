@@ -15,8 +15,8 @@ import java.util.Properties;
 public class ConnectionPool {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionPool.class);
 
-    static final ComboPooledDataSource ds = new ComboPooledDataSource();
-    static Properties prop = new Properties();
+    private static final ComboPooledDataSource ds = new ComboPooledDataSource();
+    private static Properties prop = new Properties();
 
     static {
         try {
@@ -37,10 +37,7 @@ public class ConnectionPool {
             ds.setMinPoolSize(getIntProp("minPoolSize"));
             ds.setAcquireIncrement(getIntProp("acquireIncrement"));
             ds.setMaxPoolSize(getIntProp("maxPoolSize"));
-        } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
-            System.exit(1);
-        } catch (PropertyVetoException e) {
+        } catch (IOException | PropertyVetoException e) {
             LOGGER.error(e.getMessage(), e);
             System.exit(1);
         }
