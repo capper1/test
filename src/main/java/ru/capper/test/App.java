@@ -37,30 +37,41 @@ public class App {
 
                 .get("/STAT", (request, response) -> {
                     Map<String, List<String>> query = request.getQuery();
-
-                    int size = Integer.valueOf(query.get("size").get(0));
-                    int page = Integer.valueOf(query.get("page").get(0));
-
-                    List<User> userList = us.getPage(page, size);
-
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("[");
-
-                    for (User user : userList) {
-                        sb
-                                .append("{\"userId\":\"")
-                                .append(user.getId())
-                                .append("\",\"times\":")
-                                .append(user.getCountPong())
-                                .append("},");
-                    }
-                    sb.deleteCharAt(sb.length() - 1);
-
-                    sb.append("]");
-
-                    return sb.toString();
+                    int page = getIntQuery(query, "page");
+                    if (page < 1) page = 1;
+                    int size = getIntQuery(query, "size");
+                    if (size < 1) size = 10;
+                    return toJson(us.getPage(page, size));
                 })
 
                 .start();
+    }
+
+    private static int getIntQuery(Map<String, List<String>> query, String nameIntQuery) {
+        if (query != null && query.size() > 0) {
+            try {
+                if (query.get(nameIntQuery) != null && query.get(nameIntQuery).size() > 0)
+                    return Integer.valueOf(query.get(nameIntQuery).get(0));
+            } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                LOGGER.warn(e.getMessage(), e);
+            }
+        }
+        return -1;
+    }
+
+    private static String toJson(List<User> userList) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (User user : userList) {
+            sb
+                    .append("{\"userId\":\"")
+                    .append(user.getId())
+                    .append("\",\"times\":")
+                    .append(user.getCountPong())
+                    .append("},");
+        }
+        if (sb.length() > 1) sb.deleteCharAt(sb.length() - 1);
+        sb.append("]");
+        return sb.toString();
     }
 }
