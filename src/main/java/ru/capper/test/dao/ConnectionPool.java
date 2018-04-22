@@ -1,4 +1,4 @@
-package ru.capper.test;
+package ru.capper.test.dao;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.slf4j.Logger;

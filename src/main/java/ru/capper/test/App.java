@@ -2,6 +2,7 @@ package ru.capper.test;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.capper.test.dao.ConnectionPool;
 import ru.capper.test.server.WebServer;
 
 import java.sql.*;
@@ -16,8 +17,6 @@ public class App {
     private static final String ERROR_MESSAGE = "useiId должен быть целым числом в диапазоне от -2147483648 до 2147483647";
 
     public static void main(String[] args) throws Exception {
-
-        new ConnectionPool();
 
         new WebServer()
 
@@ -82,7 +81,6 @@ public class App {
 
                         sb.append("]");
 
-                        connection.close();
                         return sb.toString();
                     } catch (SQLException ex) {
                         LOGGER.error(ex.toString(), ex);
