@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.runners.Parameterized;
 import ru.capper.test.dao.*;
+import ru.capper.test.dao.impl.DaoFactoryImpl;
 import ru.capper.test.model.User;
 
 import java.sql.Connection;
@@ -12,7 +13,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 
-public class UserDaoTest extends GenericDaoTest<Connection> {
+public class UserDaoImplTest extends GenericDaoTest<Connection> {
 
     private Connection connection;
 
@@ -50,7 +51,7 @@ public class UserDaoTest extends GenericDaoTest<Connection> {
         return connection;
     }
 
-    public UserDaoTest(Class clazz, Identified<Integer> notPersistedDto) {
+    public UserDaoImplTest(Class clazz, Identified<Integer> notPersistedDto) {
         super(clazz, notPersistedDto);
     }
 }

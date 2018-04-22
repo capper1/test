@@ -36,7 +36,7 @@ public abstract class GenericDaoTest<Context> {
 
     @Test
     public void testCreate() throws Exception {
-        Identified dto = dao().create();
+        Identified dto = dao().create(-1);
 
         Assert.assertNotNull(dto);
         Assert.assertNotNull(dto.getId());
@@ -54,14 +54,14 @@ public abstract class GenericDaoTest<Context> {
 
     @Test
     public void testGetByPK() throws Exception {
-        Serializable id = dao().create().getId();
+        Serializable id = dao().create(-1).getId();
         Identified dto = dao().getByPK(id);
         Assert.assertNotNull(dto);
     }
 
     @Test
     public void testDelete() throws Exception {
-        Identified dto = dao().create();
+        Identified dto = dao().create(-1);
         Assert.assertNotNull(dto);
 
         List list = dao().getAll();

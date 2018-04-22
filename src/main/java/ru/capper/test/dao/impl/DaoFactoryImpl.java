@@ -1,5 +1,9 @@
-package ru.capper.test.dao;
+package ru.capper.test.dao.impl;
 
+import ru.capper.test.dao.ConnectionPool;
+import ru.capper.test.dao.DaoFactory;
+import ru.capper.test.dao.GenericDao;
+import ru.capper.test.dao.PersistException;
 import ru.capper.test.model.User;
 
 import java.sql.Connection;
@@ -31,14 +35,11 @@ public class DaoFactoryImpl implements DaoFactory<Connection> {
     }
 
     public DaoFactoryImpl() {
-        // инициализация connection pool
-        new ConnectionPool();
-
         creators = new HashMap<Class, DaoCreator>();
         creators.put(User.class, new DaoCreator<Connection>() {
             @Override
             public GenericDao create(Connection connection) {
-                return new UserDao(connection);
+                return new UserDaoImpl(connection);
             }
         });
     }

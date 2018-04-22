@@ -17,6 +17,8 @@ public class App {
     private static final String ERROR_MESSAGE = "useiId должен быть целым числом в диапазоне от -2147483648 до 2147483647";
 
     public static void main(String[] args) throws Exception {
+        // инициализация connection pool
+        new ConnectionPool();
 
         new WebServer()
 

@@ -15,6 +15,10 @@ public abstract class AbstractJDBCDao<T extends Identified<PK>, PK extends Integ
 
     private Connection connection;
 
+    public Connection getConnection() {
+        return connection;
+    }
+
     /**
      * Возвращает sql запрос для получения всех записей.
      * <p/>

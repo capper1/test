@@ -14,7 +14,7 @@ public interface GenericDao<T extends Identified<PK>, PK extends Serializable> {
     /**
      * Создает новую запись и соответствующий ей объект
      */
-    public T create() throws PersistException;
+    public T create(PK key) throws PersistException;
 
     /**
      * Создает новую запись, соответствующую объекту object

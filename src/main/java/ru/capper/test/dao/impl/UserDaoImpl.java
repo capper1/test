@@ -1,15 +1,18 @@
-package ru.capper.test.dao;
+package ru.capper.test.dao.impl;
 
 
+import ru.capper.test.dao.AbstractJDBCDao;
+import ru.capper.test.dao.PersistException;
 import ru.capper.test.model.User;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.LinkedList;
 import java.util.List;
 
-public class UserDao extends AbstractJDBCDao<User, Integer> {
+public class UserDaoImpl extends AbstractJDBCDao<User, Integer> {
 
     private class PersistUser extends User {
         public void setId(int id) {
@@ -38,13 +41,31 @@ public class UserDao extends AbstractJDBCDao<User, Integer> {
     }
 
     @Override
-    public User create() throws PersistException {
+    public User create(Integer key) throws PersistException {
         User user = new User();
-        user.setId(3);
+        user.setId(key);
         return persist(user);
     }
 
-    public UserDao(Connection connection) {
+    public void increasePong(Integer key) throws PersistException {
+        String sql = "UPDATE test.user SET count_pong = count_pong + 1 WHERE id = ?;";
+        try (PreparedStatement statement = super.getConnection().prepareStatement(sql);) {
+            statement.setInt(1, key);
+            int count = statement.executeUpdate();
+            if (count == 0) {
+                User user = new User();
+                user.setId(key);
+                user.setCountPong(BigDecimal.ONE);
+                persist(user);
+            } else if (count != 1) {
+                throw new PersistException("On update modify more then 1 record: " + count);
+            }
+        } catch (Exception e) {
+            throw new PersistException(e);
+        }
+    }
+
+    public UserDaoImpl(Connection connection) {
         super(connection);
     }
 
@@ -54,8 +75,8 @@ public class UserDao extends AbstractJDBCDao<User, Integer> {
         try {
             while (rs.next()) {
                 PersistUser user = new PersistUser();
-                user.setId(rs.getInt("ID"));
-                user.setCountPong(rs.getBigDecimal("COUNT_PONG"));
+                user.setId(rs.getInt("id"));
+                user.setCountPong(rs.getBigDecimal("count_pong"));
                 result.add(user);
             }
         } catch (Exception e) {
