@@ -1,46 +1,37 @@
 package ru.capper.test.server;
 
-import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
-import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.*;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.DefaultHttpHeaders;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpHeaderUtil;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The WebServer class is a convenience wrapper around the Netty HTTP server.
  */
 public class WebServer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(WebServer.class);
+
     public static final String TYPE_PLAIN = "text/plain; charset=UTF-8";
     public static final String TYPE_JSON = "application/json; charset=UTF-8";
     public static final String SERVER_NAME = "Netty";
@@ -60,7 +51,7 @@ public class WebServer {
     /**
      * Adds a GET route.
      *
-     * @param path The URL path.
+     * @param path    The URL path.
      * @param handler The request handler.
      * @return This WebServer.
      */
@@ -73,7 +64,7 @@ public class WebServer {
     /**
      * Adds a POST route.
      *
-     * @param path The URL path.
+     * @param path    The URL path.
      * @param handler The request handler.
      * @return This WebServer.
      */
@@ -100,7 +91,7 @@ public class WebServer {
     /**
      * Initializes the server, socket, and channel.
      *
-     * @param loopGroup The event loop group.
+     * @param loopGroup          The event loop group.
      * @param serverChannelClass The socket channel class.
      * @throws InterruptedException on interruption.
      */
@@ -178,7 +169,19 @@ public class WebServer {
             }
 
             final HttpMethod method = request.method();
-            final String uri = request.uri();
+            String uri = request.uri();
+
+            Map<String, List<String>> splitQuery = null;
+            try {
+                splitQuery = splitQuery(uri);
+            } catch (UnsupportedEncodingException e) {
+                LOGGER.warn(e.getMessage(), e);
+            }
+
+            int iend = uri.indexOf("?");
+            if (iend != -1) {
+                uri = uri.substring(0, iend);
+            }
 
             final Route route = WebServer.this.routeTable.findRoute(method, uri);
             if (route == null) {
@@ -188,6 +191,7 @@ public class WebServer {
 
             try {
                 final Request requestWrapper = new Request(request);
+                requestWrapper.setQuery(splitQuery);
                 final Object obj = route.getHandler().handle(requestWrapper, null);
                 final String content = obj == null ? "" : obj.toString();
                 writeResponse(ctx, request, HttpResponseStatus.OK, TYPE_PLAIN, content);
@@ -197,11 +201,30 @@ public class WebServer {
             }
         }
 
+        public Map<String, List<String>> splitQuery(String query) throws UnsupportedEncodingException {
+            int iend = query.indexOf("?");
+            String subString = query;
+            if (iend != -1) {
+                subString = query.substring(iend + 1);
+            }
+            final Map<String, List<String>> query_pairs = new LinkedHashMap<String, List<String>>();
+            final String[] pairs = subString.split("&");
+            for (String pair : pairs) {
+                final int idx = pair.indexOf("=");
+                final String key = idx > 0 ? URLDecoder.decode(pair.substring(0, idx), "UTF-8") : pair;
+                if (!query_pairs.containsKey(key)) {
+                    query_pairs.put(key, new LinkedList<String>());
+                }
+                final String value = idx > 0 && pair.length() > idx + 1 ? URLDecoder.decode(pair.substring(idx + 1), "UTF-8") : null;
+                query_pairs.get(key).add(value);
+            }
+            return query_pairs;
+        }
 
         /**
          * Handles an exception caught.  Closes the context.
          *
-         * @param ctx The channel context.
+         * @param ctx   The channel context.
          * @param cause The exception.
          */
         @Override
@@ -225,7 +248,7 @@ public class WebServer {
     /**
      * Writes a 404 Not Found response.
      *
-     * @param ctx The channel context.
+     * @param ctx     The channel context.
      * @param request The HTTP request.
      */
     private static void writeNotFound(
@@ -239,7 +262,7 @@ public class WebServer {
     /**
      * Writes a 500 Internal Server Error response.
      *
-     * @param ctx The channel context.
+     * @param ctx     The channel context.
      * @param request The HTTP request.
      */
     private static void writeInternalServerError(
@@ -253,9 +276,9 @@ public class WebServer {
     /**
      * Writes a HTTP error response.
      *
-     * @param ctx The channel context.
+     * @param ctx     The channel context.
      * @param request The HTTP request.
-     * @param status The error status.
+     * @param status  The error status.
      */
     private static void writeErrorResponse(
             final ChannelHandlerContext ctx,
@@ -269,11 +292,11 @@ public class WebServer {
     /**
      * Writes a HTTP response.
      *
-     * @param ctx The channel context.
-     * @param request The HTTP request.
-     * @param status The HTTP status code.
+     * @param ctx         The channel context.
+     * @param request     The HTTP request.
+     * @param status      The HTTP status code.
      * @param contentType The response content type.
-     * @param content The response content.
+     * @param content     The response content.
      */
     private static void writeResponse(
             final ChannelHandlerContext ctx,
@@ -291,11 +314,11 @@ public class WebServer {
     /**
      * Writes a HTTP response.
      *
-     * @param ctx The channel context.
-     * @param request The HTTP request.
-     * @param status The HTTP status code.
-     * @param buf The response content buffer.
-     * @param contentType The response content type.
+     * @param ctx           The channel context.
+     * @param request       The HTTP request.
+     * @param status        The HTTP status code.
+     * @param buf           The response content buffer.
+     * @param contentType   The response content type.
      * @param contentLength The response content length;
      */
     private static void writeResponse(

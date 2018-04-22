@@ -3,6 +3,8 @@ package ru.capper.test.server;
 import io.netty.handler.codec.http.FullHttpRequest;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The Request class provides convenience helpers to the underyling
@@ -10,7 +12,15 @@ import java.nio.charset.StandardCharsets;
  */
 public class Request {
     private final FullHttpRequest request;
+    private Map<String, List<String>> query;
 
+    public Map<String, List<String>> getQuery() {
+        return query;
+    }
+
+    public void setQuery(Map<String, List<String>> query) {
+        this.query = query;
+    }
 
     /**
      * Creates a new Request.
@@ -30,4 +40,5 @@ public class Request {
     public String body() {
         return request.content().toString(StandardCharsets.UTF_8);
     }
+
 }

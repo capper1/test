@@ -3,22 +3,24 @@ package ru.capper.test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.capper.test.dao.ConnectionPool;
+import ru.capper.test.model.User;
 import ru.capper.test.server.WebServer;
+import ru.capper.test.service.UserService;
+import ru.capper.test.service.UserServiceImpl;
 
-import java.sql.*;
+import java.util.List;
+import java.util.Map;
 
 public class App {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(App.class);
 
-    private static final String SQL_SELECT = "SELECT COUNT(*) FROM user_connect WHERE user_id = ?";
-    private static final String SQL_INSERT = "INSERT INTO user_connect(user_id) VALUES (?)";
     private static final String SQL_SELECT_ALL = "SELECT * FROM (SELECT user_id, COUNT(*) FROM user_connect GROUP BY user_id) AS temp";
-    private static final String ERROR_MESSAGE = "useiId должен быть целым числом в диапазоне от -2147483648 до 2147483647";
 
     public static void main(String[] args) throws Exception {
-        // инициализация connection pool
         new ConnectionPool();
+
+        UserService us = new UserServiceImpl();
 
         new WebServer()
 
@@ -27,67 +29,36 @@ public class App {
                     try {
                         userId = Integer.valueOf(request.body());
                     } catch (NumberFormatException nfe) {
-                        LOGGER.warn(ERROR_MESSAGE);
-                        return ERROR_MESSAGE;
+                        LOGGER.warn("useiId должен быть целым числом в диапазоне от -2147483648 до 2147483647");
+                        return "useiId должен быть целым числом в диапазоне от -2147483648 до 2147483647";
                     }
-
-                    try (Connection connection = ConnectionPool.getConnection()) {
-
-                        try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT)) {
-                            if (null != preparedStatement) {
-                                preparedStatement.setInt(1, userId);
-                                preparedStatement.executeUpdate();
-                            }
-                        }
-
-                        int i = 0;
-                        try (PreparedStatement preparedStatementSelect = connection.prepareStatement(SQL_SELECT)) {
-                            preparedStatementSelect.setInt(1, userId);
-                            try (ResultSet resultSet = preparedStatementSelect.executeQuery()) {
-                                if (null != resultSet && resultSet.next()) {
-                                    i = resultSet.getInt(1);
-                                }
-                            }
-                        }
-
-                        return "PONG " + i;
-
-                    } catch (SQLException ex) {
-                        LOGGER.error(ex.toString(), ex);
-                        return null;
-                    }
+                    return "PONG " + us.incrementPong(userId).longValue();
                 })
 
                 .get("/STAT", (request, response) -> {
-                    try (Connection connection = ConnectionPool.getConnection()) {
+                    Map<String, List<String>> query = request.getQuery();
 
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("[");
-                        try (Statement statement = connection.createStatement()) {
-                            try (ResultSet resultSet = statement.executeQuery(SQL_SELECT_ALL)) {
-                                if (null != resultSet) {
-                                    while (resultSet.next()) {
-                                        int userId = resultSet.getInt(1);
-                                        long countConnect = resultSet.getLong(2);
-                                        sb
-                                                .append("{\"userId\":\"")
-                                                .append(userId)
-                                                .append("\",\"times\":")
-                                                .append(countConnect)
-                                                .append("},");
-                                    }
-                                    sb.deleteCharAt(sb.length() - 1);
-                                }
-                            }
-                        }
+                    int size = Integer.valueOf(query.get("size").get(0));
+                    int page = Integer.valueOf(query.get("page").get(0));
 
-                        sb.append("]");
+                    List<User> userList = us.getPage(page, size);
 
-                        return sb.toString();
-                    } catch (SQLException ex) {
-                        LOGGER.error(ex.toString(), ex);
-                        return null;
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("[");
+
+                    for (User user : userList) {
+                        sb
+                                .append("{\"userId\":\"")
+                                .append(user.getId())
+                                .append("\",\"times\":")
+                                .append(user.getCountPong())
+                                .append("},");
                     }
+                    sb.deleteCharAt(sb.length() - 1);
+
+                    sb.append("]");
+
+                    return sb.toString();
                 })
 
                 .start();
