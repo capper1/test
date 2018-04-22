@@ -8,6 +8,7 @@ import ru.capper.test.server.WebServer;
 import ru.capper.test.service.UserService;
 import ru.capper.test.service.UserServiceImpl;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +31,11 @@ public class App {
                         LOGGER.warn("useiId должен быть целым числом в диапазоне от -2147483648 до 2147483647");
                         return "useiId должен быть целым числом в диапазоне от -2147483648 до 2147483647";
                     }
-                    return "PONG " + us.incrementPong(userId).longValue();
+                    BigDecimal pong = us.incrementPong(userId);
+                    if (pong != null)
+                        return "PONG " + pong.longValue();
+                    else
+                        return "PONG NULL";
                 })
 
                 .get("/STAT", (request, response) -> {
@@ -58,6 +63,8 @@ public class App {
     }
 
     private static String toJson(List<User> userList) {
+        if (userList == null || userList.isEmpty()) return "[]";
+
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         for (User user : userList) {
