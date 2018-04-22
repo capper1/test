@@ -65,7 +65,7 @@ public class App {
     private static String toJson(List<User> userList) {
         if (userList == null || userList.isEmpty()) return "[]";
 
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer(userList.size() * 34);
         sb.append("[");
         for (User user : userList) {
             sb
